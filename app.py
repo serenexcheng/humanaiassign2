@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+import requests
 
 st.set_page_config(page_title="Stock Market Explainer", page_icon="📈")
 
@@ -30,29 +30,43 @@ focus_area = st.multiselect(
     default=["What the company does", "How it makes money", "Typical risks"]
 )
 
-# Configure Gemini with your Streamlit secret
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
 
-# FREE model
-model = genai.GenerativeModel("models/gemini-1.5-flash")
+API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def generate_explanation(company, level, focus_list):
-    focus_text = ", ".join(focus_list)
+def generate_explanation(company, level, focus_points):
+    focus_text = ", ".join(focus_points)
+
     prompt = f"""
-Explain the company "{company}" in simple, educational language.
-User stock knowledge level: {level}
+Explain the company "{company}" in simple, beginner-friendly language.
+User knowledge level: {level}
 Focus areas: {focus_text}
 
-Guidelines:
+Rules:
 - No investment advice.
 - No price predictions.
-- Use short paragraphs.
-- Keep explanations general and beginner-friendly.
-- Include a final reminder: "This is for learning only, not financial advice."
+- Keep paragraphs short.
+- Use everyday examples.
+- Include a section called "General Risks".
+- End with: "This explanation is for learning only, not financial advice."
 """
 
-    response = model.generate_content(prompt)
-    return response.text
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+    }
+
+    payload = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7  
+    }
+
+    response = requests.post(API_URL, json=payload, headers=headers)
+    response_json = response.json()
+    return response_json["choices"][0]["message"]["content"]
 
 
 if st.button("✨ Explain"):
@@ -60,6 +74,6 @@ if st.button("✨ Explain"):
         st.warning("Please enter a company name first.")
     else:
         with st.spinner("Generating explanation…"):
-            result = generate_explanation(company_name, knowledge_level, focus_area)
-        st.write(result)
+            explanation = generate_explanation(company_name, knowledge_level, focus_area)
+        st.write(explanation)
         st.info("This explanation is for learning only — not financial advice.")
