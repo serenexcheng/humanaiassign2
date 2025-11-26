@@ -1,5 +1,5 @@
 import streamlit as st
-from openai import OpenAI
+import google.generativeai as genai
 
 st.set_page_config(page_title="Stock Market Explainer", page_icon="📈")
 
@@ -30,7 +30,10 @@ focus_area = st.multiselect(
     default=["What the company does", "How it makes money", "Typical risks"]
 )
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# Configure Gemini using Streamlit Secrets
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+
+model = genai.GenerativeModel("gemini-pro")
 
 def generate_explanation(company, level, focus_list):
     focus_text = ", ".join(focus_list)
@@ -46,13 +49,8 @@ Guidelines:
 - Keep explanations general and beginner-friendly.
 - Include a final reminder: "This is for learning only, not financial advice."
 """
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.5
-    )
-    return response.choices[0].message.content
+    response = model.generate_content(prompt)
+    return response.text
 
 
 if st.button("✨ Explain"):
