@@ -30,10 +30,11 @@ focus_area = st.multiselect(
     default=["What the company does", "How it makes money", "Typical risks"]
 )
 
-# Configure Gemini using Streamlit Secrets
+# Configure Gemini with your Streamlit secret
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-model = genai.GenerativeModel("gemini-pro")
+# FREE model
+model = genai.GenerativeModel("models/gemini-1.5-flash")
 
 def generate_explanation(company, level, focus_list):
     focus_text = ", ".join(focus_list)
@@ -49,6 +50,7 @@ Guidelines:
 - Keep explanations general and beginner-friendly.
 - Include a final reminder: "This is for learning only, not financial advice."
 """
+
     response = model.generate_content(prompt)
     return response.text
 
